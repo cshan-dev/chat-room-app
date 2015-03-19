@@ -26,12 +26,18 @@ theapp.config(["$routeProvider", "$locationProvider",
 var socket = io.connect();
 var rooms = [];
 var myroom = "";
+var myID;
 
 //Some duplication here, I listen for a welcome and update the rooms variable.
 socket.on("welcome", function(data) {
   rooms = data.rooms;
   console.log("fresh rooms in");
 });
+
+socket.on("id", function(data){
+  myID = data.id;
+  console.log("Got ID ", myID);
+})
 
 
 theapp.controller("LobbyController", ["$scope",
@@ -121,10 +127,14 @@ theapp.controller("RoomController", ["$scope", "$routeParams",
     var clickX = new Array();
     var clickY = new Array();
     var clickDrag = new Array();
+    var multiClickX = [];
+    var multiClickY = [];
+    var multiClickDrag = [];
     var paint;
 
     function addClick(x, y, dragging) {
       socket.emit('draw', {
+        id: myID,
         room: $scope.roomTopic,
         x: x,
         y: y,
@@ -133,9 +143,9 @@ theapp.controller("RoomController", ["$scope", "$routeParams",
       
       
       //for single user
-      // clickX.push(x);
-      // clickY.push(y);
-      // clickDrag.push(dragging);
+      clickX.push(x);
+      clickY.push(y);
+      clickDrag.push(dragging);
     }
 
     function redraw() {
@@ -144,9 +154,9 @@ theapp.controller("RoomController", ["$scope", "$routeParams",
       var context = canvas.getContext('2d');
       context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
 
-      context.strokeStyle = "#df4b26";
+      context.strokeStyle = "#0000FF";
       context.lineJoin = "round";
-      context.lineWidth = 5;
+      context.lineWidth = 3;
 
       for (var i = 0; i < clickX.length; i++) {
         context.beginPath();
@@ -160,15 +170,31 @@ theapp.controller("RoomController", ["$scope", "$routeParams",
         context.closePath();
         context.stroke();
       }
+      context.strokeStyle = "#FF0000";
+
+      for (var i = 0; i < multiClickX.length; i++) {
+        context.beginPath();
+        if (multiClickDrag[i] && i) {
+          context.moveTo(multiClickX[i - 1], multiClickY[i - 1]);
+        }
+        else {
+          context.moveTo(multiClickX[i] - 1, multiClickY[i]);
+        }
+        context.lineTo(multiClickX[i], multiClickY[i]);
+        context.closePath();
+        context.stroke();
+      }
     }
     
       socket.on('drawmsg', function(drawmsg) {
-      console.log("new drawmsg", drawmsg.x, drawmsg.y);
-      clickX.push(drawmsg.x);
-      clickY.push(drawmsg.y);
-      clickDrag.push(drawmsg.dragging);
-      redraw();
-      $scope.$apply();
+      if (drawmsg.id != myID){
+        console.log("new drawmsg", drawmsg.x, drawmsg.y);
+        multiClickX.push(drawmsg.x);
+        multiClickY.push(drawmsg.y);
+        multiClickDrag.push(drawmsg.dragging);
+        redraw();
+        $scope.$apply();
+      }
     });
   }
 ]);

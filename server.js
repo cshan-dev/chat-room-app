@@ -7,15 +7,23 @@ var express = require('express');
 var router = express();
 var server = http.createServer(router);
 var io = socketio.listen(server);
+var ids = [];
 
 //the nice way of serving up a folder without needing to do anything too nutty
 router.use(express.static(path.resolve(__dirname, 'client')));
 
 //a list of standard rooms although nothing here prevents the creation of more rooms on the client side
-var rooms = ["politics", "investing", "coding"];
+var rooms = ["pictureRoom1", "iHeartColoring", "colorInTheLines"];
 
 //connection is the main event
 io.sockets.on('connection', function(socket){
+    //make id for client
+    var newClientID = ids.length;
+    ids.push(newClientID);
+    socket.emit('id', {
+        id: newClientID
+    })
+    
 //socket is the interface for one session
 
 //socket.on makes an "event listener" which will trigger the function.
