@@ -55,8 +55,15 @@ io.sockets.on('connection', function(socket){
         io.sockets.in(data.room).emit('message', data);
     });
 
-});
+//});
 
+ socket.on('draw', function(data) {
+        console.log('sending drawmsg',data.room);
+//this part takes the message and only emits it to people in the same room.
+        io.sockets.in(data.room).emit('drawmsg', data);
+    });
+
+});
 
 //This is taken from the cloud9 hello world for node since it's sure to work fine
 server.listen(process.env.PORT || 3000, process.env.IP || "0.0.0.0", function(){
